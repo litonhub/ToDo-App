@@ -19,7 +19,7 @@ function App() {
   }
 
   let handleClick = async () => {
-    
+
   }
 
   useEffect(() => {
@@ -45,16 +45,33 @@ function App() {
     setId(item._id)
   }
 
-  let handleUpdate = async () => {
-    let data = await axios.post(`http://localhost:5000/todoupdate/${id}`, {
-      task: task,
-      priority: priority
-    })
+  let handleUpdate = async (e) => {
+    e.preventDefault()
+
+    let formData = new FormData()
+
+    formData.append("task", task)
+    formData.append("priority", priority)
+
+    const image = document.querySelector('input[name="image"]').files[0]
+
+    if (image) {
+      formData.append("image", image)
+    }
+
+    let data = await axios.post(
+      `http://localhost:5000/todoupdate/${id}`,
+      formData
+    )
 
     console.log(data)
 
     let todosData = await axios.get("http://localhost:5000/alltodos")
     setData(todosData.data.data)
+
+    setUpdate(false)
+    setTask("")
+    setPriority("")
   }
 
   let handleSubmit = async (e) => {
@@ -87,8 +104,8 @@ function App() {
         <p style={{ background: "red" }}>{info.message}</p>
       )}
 
-      <input name='task' onChange={handleTaskChange} type="text" value={task}/>
-      
+      <input name='task' onChange={handleTaskChange} type="text" value={task} />
+
       <select name='priority' onChange={handleOptionSelect} value={priority}>
         <option value="low">Low</option>
         <option value="medium">Medium</option>
@@ -108,7 +125,7 @@ function App() {
           <div key={item._id}>
             <li>
               {item.task} ==== {item.priority} ==== {item.status}
-              <p  style={{ fontWeight: "bold" }}>FileType: {item.path.type}</p>
+              <p style={{ fontWeight: "bold" }}>FileType: {item.path.type}</p>
               <img width={300} src={`http://localhost:5000/${item.path.url}`} alt="" />
             </li>
 

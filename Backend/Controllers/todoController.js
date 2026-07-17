@@ -1,61 +1,125 @@
-const Todo = require("../Models/userModel")
+const Todo = require("../models/userModel");
 
 const createTodo = async (req, res) => {
-    const { task, status, priority } = req.body
-
+  try {
+    const { task, priority } = req.body;
 
     if (!task || !priority) {
-        return res.send({
-            success: false,
-            message: "Please fill the all filed"
-        })
+      return res.status(400).json({
+        success: false,
+        message: "Please fill all required fields.",
+      });
     }
 
     const todo = new Todo({
-        task: task,
-        priority: priority,
-        path: {
-            url: req.file.path,
-            type: req.file.mimetype
-        }
-    })
+      task,
+      priority,
+      path: {
+        url: req.file.path,
+        type: req.file.mimetype,
+      },
+    });
 
-    await todo.save()
-    return res.send({
-        success: true,
-        message: "ToDo Created"
-    })
-}
+    await todo.save();
+
+    return res.status(201).json({
+      success: true,
+      message: "Todo created successfully.",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to create todo.",
+      error: error.message,
+    });
+  }
+};
 
 const alltodos = async (req, res) => {
-    let data = await Todo.find({})
+  try {
+    const data = await Todo.find({});
 
-    res.send({
-        success: true,
-        message: "Todo Collected",
-        data: data
-    })
-}
+    return res.status(200).json({
+      success: true,
+      message: "Todos fetched successfully.",
+      data,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch todos.",
+      error: error.message,
+    });
+  }
+};
 
 const todoDelete = async (req, res) => {
-    let { id } = req.params
-    await Todo.findByIdAndDelete(id)
+  try {
+    const { id } = req.params;
 
-    res.send({
-        success: true,
-        message: "Todo Deleted",
-    })
-}
+    const deletedData = await Todo.findByIdAndDelete(id);
 
-let todoUpdate = async (req, res) => {
-    const { id } = req.params
-    let data = await Todo.findByIdAndUpdate({ _id: id }, req.body)
+    if (!deletedData) {
+      return res.status(404).json({
+        success: false,
+        message: "Todo not found.",
+      });
+    }
 
-    res.send({
-        success: true,
-        message: "Todo Updated",
-    })
-}
+    return res.status(200).json({
+      success: true,
+      message: "Todo deleted successfully.",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete todo.",
+      error: error.message,
+    });
+  }
+};
 
+const todoUpdate = async (req, res) => {
+  try {
+    const { id } = req.params;
 
-module.exports = { createTodo, alltodos, todoDelete, todoUpdate }
+    if (req.file) {
+      req.body.path = {
+        url: req.file.path,
+        type: req.file.mimetype,
+      };
+    }
+
+    const data = await Todo.findByIdAndUpdate(
+      { _id: id },
+      req.body,
+      { returnDocument: "after" }
+    );
+
+    if (!data) {
+      return res.status(404).json({
+        success: false,
+        message: "Todo not found.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Todo updated successfully.",
+      data,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update todo.",
+      error: error.message,
+    });
+  }
+};
+
+module.exports = {
+  createTodo,
+  alltodos,
+  todoDelete,
+  todoUpdate,
+};
